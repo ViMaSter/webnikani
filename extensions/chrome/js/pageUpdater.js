@@ -150,6 +150,10 @@ try{r=$D.Grammar.start.call({},s.replace(/^\s*(\S*(\s+\S+)*)\s*$/,"$1"));}catch(
 return((r[1].length===0)?r[0]:null);};$D.getParseFunction=function(fx){var fn=$D.Grammar.formats(fx);return function(s){var r=null;try{r=fn.call({},s);}catch(e){return null;}
 return((r[1].length===0)?r[0]:null);};};$D.parseExact=function(s,fx){return $D.getParseFunction(fx)(s);};}());
 
+console.profile("WaniKani");
+
+const userAssignedMappings = [];
+
 (async () => {
 	const apiToken = await new Promise((resolve, reject) => { chrome.storage.sync.get("wanikaniApiToken", (result) => {
 		if (chrome.runtime.lastError) {
@@ -365,24 +369,6 @@ const getMapping = async (id) => {
 };
 
 async function ParsePage(element) {
-	let userAssignments = await new Promise((resolve, reject) => {
-		chrome.storage.sync.get("subjectIds", (result) => {
-			if (chrome.runtime.lastError) {
-				reject(chrome.runtime.lastError);
-			} else {
-				resolve(JSON.parse(result.subjectIds) || "[]");
-			}
-		});
-	});
-
-	const userAssignedMappings = [];
-	for (const id of userAssignments) {
-		const mapping = await getMapping(id);
-		mapping.english.forEach((japanese, english) => {
-			userAssignedMappings[mapping.english[english]] = mapping.japanese;
-		});
-	}
-
 	$(element).contents().each(function() {
 		if (this.nodeType === 3) {
 			let nodeValue = this.nodeValue;
@@ -399,6 +385,8 @@ async function ParsePage(element) {
 			}
 		}
 	});
+
+	console.profileEnd("WaniKani");
 }
 
 function trackNewElements() {
@@ -418,9 +406,33 @@ function trackNewElements() {
 	setInterval(checkForNewElements, 5000);
 }
 
-$(document).ready(function() {
+const onReady = async () => {
 	if (window.location.href.includes("wanikani.com")) {
 		return;
 	}
+
+	let userAssignments = await new Promise((resolve, reject) => {
+		chrome.storage.sync.get("subjectIds", (result) => {
+			if (chrome.runtime.lastError) {
+				reject(chrome.runtime.lastError);
+			} else {
+				resolve(JSON.parse(result.subjectIds) || "[]");
+			}
+		});
+	});
+
+	for (const id of userAssignments) {
+		const mapping = await getMapping(id);
+		mapping.english.forEach((japanese, english) => {
+			userAssignedMappings[mapping.english[english]] = mapping.japanese;
+		});
+	}
+
 	trackNewElements();
-});
+};
+
+if (document.readyState === "complete" || document.readyState === "interactive") {
+	onReady();
+} else {
+	$(document).ready(onReady);
+}
