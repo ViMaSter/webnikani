@@ -410,6 +410,9 @@ const onReady = async () => {
 	if (window.location.href.includes("wanikani.com")) {
 		return;
 	}
+	if (window.location.href.includes("reddit.com")) {
+		return;
+	}
 
 	let userAssignments = await new Promise((resolve, reject) => {
 		chrome.storage.sync.get("subjectIds", (result) => {
