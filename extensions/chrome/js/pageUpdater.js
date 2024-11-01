@@ -410,6 +410,12 @@ const onReady = async () => {
 	if (window.location.href.includes("wanikani.com")) {
 		return;
 	}
+	if (window.location.href.includes("github.com")) {
+		return;
+	}
+	if (window.location.href.includes("github.dev")) {
+		return;
+	}
 	if (window.location.href.includes("reddit.com")) {
 		return;
 	}
